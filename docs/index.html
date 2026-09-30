@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LoopLM — What Makes Recurrence Effective in Looped Language Models?</title>
+  <meta name="description" content="When does recurrence help, where should it be applied, and how should it be conditioned? A systematic study of looped language models across inference budgets.">
+  <meta name="theme-color" content="#7a1d2a">
+  <meta property="og:title" content="What Makes Recurrence Effective in Looped Language Models?">
+  <meta property="og:description" content="Understanding recurrent scaling beyond the training horizon. Research from SphereLab, CUHK and MBZUAI.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://spherelab.ai/looplm/">
+  <meta property="og:image" content="https://spherelab.ai/looplm/assets/figures/recurrence.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://spherelab.ai/looplm/">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="hero" id="top">
+    <div class="container">
+      <a class="eyebrow" href="https://spherelab.ai/">SphereLab <span>·</span> Technical Report</a>
+      <h1>What Makes Recurrence Effective<br class="desktop-break"> in <em>Looped Language Models?</em></h1>
+      <p class="subtitle">Understanding when to loop, where to loop,<br class="desktop-break"> and how to make every iteration count.</p>
+      <p class="authors"><span>Xinlin Zhuang<sup>1,2</sup></span><span>Siyuan Wang<sup>1</sup></span><span>Imran Razzak<sup>2</sup></span><span>Weiyang Liu<sup>1,*</sup></span></p>
+      <p class="affiliations"><span><sup>1</sup>The Chinese University of Hong Kong</span><span><sup>2</sup>MBZUAI</span></p>
+      <p class="author-note">* Corresponding author</p>
+      <div class="resource-links" aria-label="Project resources">
+        <a class="button primary" href="https://arxiv.org/abs/2609.36636" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h6"/></svg>Paper</a>
+        <span class="resource-status"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-15-2 18"/></svg>Code <span class="coming-soon">coming soon</span></span>
+        <a class="button" href="#citation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H4v7h5v7H3m18-14h-5v7h5v7h-6"/></svg>BibTeX</a>
+      </div>
+    </div>
+  </header>
+
+  <nav class="section-nav" aria-label="Sections">
+    <div class="nav-inner"><a class="nav-brand" href="#top">LoopLM<span>↻</span></a><div class="nav-links"><a href="#overview">Overview</a><a href="#findings">Findings</a><a href="#method">Method</a><a href="#results">Results</a><a href="#citation">Citation</a></div></div>
+  </nav>
+
+  <main id="main">
+    <div class="container teaser">
+      <figure class="figure-card">
+        <div class="figure-topline"><span class="small-label">The question behind the loops</span><a href="assets/figures/recurrence.pdf" target="_blank" rel="noopener">Original PDF ↗</a></div>
+        <a class="figure-zoom" href="assets/figures/recurrence.png" aria-label="Enlarge recurrence scaling figure"><img src="assets/figures/recurrence.png" width="2400" height="611" fetchpriority="high" alt="Four panels compare knowledge and reasoning changes, ProofWriter and CLUTRR difficulty, and reasoning scores across physical-depth and loop-count configurations."></a>
+        <figcaption><strong>More loops, different outcomes.</strong> Extra recurrent computation can improve reasoning beyond the training horizon while knowledge performance declines. Benefits depend on the task, its difficulty, and the allocation of physical layers and loops.</figcaption>
+      </figure>
+      <div class="study-strip"><div><strong>2</strong><span>backbone families</span></div><div><strong>3</strong><span>inference regimes</span></div><div><strong>Up to 3×</strong><span>the training depth</span></div><div><strong>Shared weights</strong><span>more compute, same backbone</span></div></div>
+    </div>
+
+    <section id="overview">
+      <div class="narrow">
+        <p class="section-label">Abstract</p><h2>Deeper computation.<br>But when is it useful?</h2>
+        <div class="tldr"><span class="small-label">TL;DR</span><p>Recurrence can unlock additional reasoning without adding backbone parameters, but effective depth alone does not predict success. <strong>History-state injection + timestep conditioning</strong> offers a lightweight way to improve robustness across inference budgets.</p></div>
+        <p>Looped language models (LoopLMs) increase computational depth through parameter sharing, offering a path to scale inference computation without adding parameters. However, it remains unclear when additional recurrence is beneficial and how architectural choices affect its effectiveness.</p>
+        <p>Through controlled experiments, we systematically examine <strong>when recurrence helps, where it should be applied, and how its conditioning affects performance.</strong> Our evaluation covers inference budgets below, within, and beyond the training horizon under knowledge and reasoning tasks.</p>
+        <p>We find that recurrence can improve reasoning beyond the training horizon while degrading knowledge performance, but harder reasoning instances do not consistently benefit more. Performance also depends on how distinct layers and recurrent iterations are allocated. Non-recurrent output layers improve robustness to under-unrolling, while the preferred placement of input and output layers varies with inference budget.</p>
+        <p>Finally, conventional initial-state injection offers limited robustness to varying recurrence depth. We propose history-state injection as an alternative, and show that channel-wise history-state injection combined with timestep conditioning better preserves knowledge under extended unrolling while improving robustness across inference budgets.</p>
+      </div>
+    </section>
+
+    <section id="findings" class="soft-section">
+      <div class="container">
+        <p class="section-label">Key findings</p><h2>Three questions for effective recurrence.</h2>
+        <div class="finding-grid">
+          <article class="finding"><span class="finding-number">01 / WHEN</span><h3>Reasoning can keep improving.</h3><p>The training horizon is not a hard ceiling. Yet knowledge and reasoning respond differently, and harder reasoning problems do not consistently gain more.</p><a href="#scaling">Explore recurrent scaling <span>↗</span></a></article>
+          <article class="finding"><span class="finding-number">02 / WHERE</span><h3>Layer allocation matters.</h3><p>Equal effective depth does not imply equal behavior. Output-side blocks help at smaller budgets; input-heavy allocations can support reasoning extrapolation.</p><a href="#architecture">Explore the architecture <span>↗</span></a></article>
+          <article class="finding"><span class="finding-number">03 / HOW</span><h3>Condition on the trajectory.</h3><p>Recent state differences and timestep signals provide complementary information, making their combination effective under deep extrapolation.</p><a href="#conditioning">Explore conditioning <span>↗</span></a></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="method">
+      <div class="container">
+        <div class="reading-width"><p class="section-label">Method &amp; setup</p><h2>One shared core. A variable compute budget.</h2><p>A looped decoder applies an input-side <strong>Prelude</strong>, repeatedly executes a parameter-shared <strong>recurrent core</strong>, and passes the result through an output-side <strong>Coda</strong>. Changing the number of loops changes inference compute.</p></div>
+        <div class="architecture-demo" aria-label="Interactive illustration of recurrent depth">
+          <div class="small-label">Explore the compute budget</div>
+          <div class="architecture-flow"><span class="input-token">Tokens</span><span class="flow-arrow" aria-hidden="true">→</span><div class="block">Prelude<small>p layers</small></div><span class="flow-arrow" aria-hidden="true">→</span><div class="recurrent-group"><span class="loop-label">↻ <output id="loop-count" for="loops">7 loops</output></span><div class="block core">Shared core<small>s = 4 layers</small></div></div><span class="flow-arrow" aria-hidden="true">→</span><div class="block">Coda<small>c layers</small></div><span class="flow-arrow" aria-hidden="true">→</span><span class="input-token">Output</span></div>
+          <div class="budget-controls"><label for="loops">Inference loops <strong id="loop-value">7</strong></label><input type="range" id="loops" min="1" max="21" value="7" aria-describedby="demo-note"><span class="regime" id="regime">Training horizon</span></div>
+          <div class="depth-readout" aria-live="polite"><span>Physical depth <strong>4</strong></span><span>Effective depth <strong id="effective-depth">28</strong></span><span>Inference / training <strong id="budget-ratio">1.00×</strong></span></div>
+          <p class="demo-note" id="demo-note">Illustrative BaseLoop setting: p = c = 0, s = 4, training loops K = 7. Prelude and Coda are omitted in this setting. The slider illustrates compute, not predicted accuracy.</p>
+          <noscript><p class="demo-note">Enable JavaScript to adjust the loop count. The default shows 7 loops and an effective depth of 28.</p></noscript>
+        </div>
+        <div class="setup-grid"><div><h3>Controlled pretraining</h3><p>Llama3.1-1B and Qwen3-0.6B backbone configurations, randomly initialized and trained on FineWeb-Edu with 2,048-token sequences. Models train with a fixed loop count and full backpropagation through all loops.</p></div><div><h3>Knowledge &amp; reasoning</h3><p>Knowledge: SciQ, ARC-Easy, and PIQA. Reasoning: ARC-Challenge, WinoGrande, OpenBookQA, HellaSwag, CommonsenseQA, ProofWriter, CLUTRR, and BBH.</p></div></div>
+        <div class="equation"><span class="small-label">Physical depth vs. effective depth</span><p>L<sub>phys</sub> = p + s + c <span class="equation-sep">·</span> L(r) = p + r · s + c</p></div>
+      </div>
+    </section>
+
+    <section id="scaling">
+      <div class="narrow"><p class="section-label">01 / When recurrence helps</p><h2>The training horizon is not the finish line.</h2><p>For Llama BaseLoop 4 × 5, increasing effective depth from 20 to 40 raises the reasoning score from <strong>28.52 to 31.49</strong>, while knowledge falls from <strong>62.80 to 52.11</strong>. Additional computation helps selectively.</p><p>The allocation of physical depth and loop count also changes the scaling curve. Under the same effective training depth of 20, BaseLoop 5 × 4 reaches a reasoning score of <strong>31.88</strong> at inference depth 30, exceeding the non-recurrent reference of 30.25 using additional test-time computation.</p><div class="note"><strong>A practical takeaway.</strong> Evaluate knowledge and reasoning separately, and test across inference budgets. A single aggregate score at the training horizon can hide very different extrapolation behavior.</div></div>
+    </section>
+
+    <section id="architecture">
+      <div class="container"><div class="reading-width"><p class="section-label">02 / Where to apply recurrence</p><h2>Give the boundaries their own role.</h2><p><strong>BaseLoop</strong> shares the entire Transformer stack across iterations. <strong>CoreLoop</strong> reserves independently parameterized Prelude and Coda blocks around the recurrent core. Their preferred allocation changes with the available compute.</p></div>
+        <figure class="figure-card"><div class="figure-topline"><span class="small-label">BaseLoop vs. CoreLoop · Llama</span><a href="assets/figures/architecture.pdf" target="_blank" rel="noopener">Original PDF ↗</a></div><a class="figure-zoom" href="assets/figures/architecture.png" aria-label="Enlarge BaseLoop and CoreLoop results"><img src="assets/figures/architecture.png" width="2400" height="917" loading="lazy" alt="Overall, knowledge, and reasoning performance for BaseLoop and CoreLoop across four physical depths and different Prelude and Coda allocations."></a><figcaption>Dashed lines mark the effective training depth of 20; shaded regions indicate extrapolation. Coda blocks improve knowledge robustness under under-unrolling, while Prelude-heavy allocations can better sustain reasoning beyond training.</figcaption></figure>
+        <div class="regime-grid"><article><span class="small-label">r &lt; K</span><h3>Under-unrolling</h3><p>Output-side layers help align partially executed recurrent states with the final readout.</p></article><article><span class="small-label">r = K</span><h3>Training horizon</h3><p>Performance is generally strong, with smaller differences between boundary allocations.</p></article><article><span class="small-label">r &gt; K</span><h3>Extrapolation</h3><p>Input-heavy allocations can support reasoning, but the benefit depends on the configuration.</p></article></div>
+      </div>
+    </section>
+
+    <section id="conditioning">
+      <div class="container"><div class="reading-width"><p class="section-label">03 / How to condition recurrence</p><h2>From a static anchor to an evolving history.</h2><h3>History-state injection</h3><p>Reinjecting the initial state supplies the same reference at every loop. Instead, history-state injection conditions the current update on <strong>relative differences from recent completed recurrent states</strong>, exposing how the trajectory is evolving.</p></div>
+        <div class="equation history-equation"><span class="small-label">History-state injection</span><p>h<sub>ℓ+1</sub> = F<sub>θ</sub>( h<sub>ℓ</sub> + ∑<sub>j=1…mℓ</sub> B<sub>j</sub>(h<sub>ℓ−j</sub> − h<sub>ℓ</sub>) )</p><small>m<sub>ℓ</sub> = min{w, max(ℓ − 1, 0)}. History excludes h<sub>0</sub>; each lag-specific operator B<sub>j</sub> is shared across iterations.</small></div>
+        <figure class="figure-card"><div class="figure-topline"><span class="small-label">History-state injection · Qwen</span><a href="assets/figures/history-state.pdf" target="_blank" rel="noopener">Original PDF ↗</a></div><a class="figure-zoom" href="assets/figures/history-state.png" aria-label="Enlarge history-state injection results"><img src="assets/figures/history-state.png" width="2400" height="742" loading="lazy" alt="History-state injection results for scalar, channel-wise and dense parameterizations with different history window sizes, up to three times the training depth."></a><figcaption>On Qwen BaseLoop 4 × 7, a short history window rescues deep extrapolation for dense injection. Low-capacity history conditioning alone gives limited gains, motivating complementary timestep signals.</figcaption></figure>
+        <details class="additional-figure"><summary>Compare with conventional initial-state injection <span aria-hidden="true">+</span></summary><figure class="figure-card"><a class="figure-zoom" href="assets/figures/initial-state.png" aria-label="Enlarge initial-state injection results"><img src="assets/figures/initial-state.png" width="2400" height="742" loading="lazy" alt="Initial-state injection across Qwen configurations: dense injection shows pronounced knowledge degradation during extrapolation."></a><figcaption>High-capacity dense initial-state injection can severely degrade knowledge beyond the training horizon. <a href="assets/figures/initial-state.pdf" target="_blank" rel="noopener">Original PDF ↗</a></figcaption></figure></details>
+        <div class="reading-width subsection"><h3>Timestep conditioning</h3><p>Continuous timestep signals let the same core adjust its computation across iterations. <strong>Loop Gating (LG)</strong> modulates the shared stack’s update; <strong>Branch Gating (BG)</strong> separately modulates attention and MLP residual branches. Both offer lightweight alternatives to channel-wise AdaLN modulation.</p><p>At inference, the time grid is rescaled to the requested loop count: more loops divide the same normalized interval [0, 1] into more, smaller steps. Gains depend on the architecture and inference budget.</p></div>
+        <figure class="figure-card"><div class="figure-topline"><span class="small-label">Timestep conditioning · Qwen</span><a href="assets/figures/timestep.pdf" target="_blank" rel="noopener">Original PDF ↗</a></div><a class="figure-zoom" href="assets/figures/timestep.png" aria-label="Enlarge timestep conditioning results"><img src="assets/figures/timestep.png" width="2400" height="786" loading="lazy" alt="Comparison of Loop Gating, Branch Gating, AdaLN and BaseLoop across four Qwen recurrent configurations."></a><figcaption>Time-dependent modulation interacts with physical depth and loop count. Improvements at the training horizon do not guarantee gains at larger inference budgets.</figcaption></figure>
+      </div>
+    </section>
+
+    <section id="results" class="soft-section">
+      <div class="container"><div class="reading-width"><p class="section-label">Combined results</p><h2>History and time work better together.</h2><p>Channel-wise history-state injection with a window of two, combined with Loop Gating, gives the strongest pairwise result under deep extrapolation in the Qwen BaseLoop 4 × 7 study.</p></div>
+        <div class="result-highlights"><div><strong>37.30<span>%</span></strong><p>Overall accuracy at depth 84</p></div><div><strong>+1.16<span> pp</span></strong><p>Over its stronger individual component</p></div><div><strong>3<span>×</span></strong><p>Effective training depth</p></div></div>
+        <figure class="figure-card"><div class="figure-topline"><span class="small-label">Combining conditioning mechanisms</span><a href="assets/figures/combined.pdf" target="_blank" rel="noopener">Original PDF ↗</a></div><a class="figure-zoom" href="assets/figures/combined.png" aria-label="Enlarge combined conditioning results"><img src="assets/figures/combined.png" width="2400" height="566" loading="lazy" alt="Four panels compare initial plus history, initial plus timestep, history plus timestep, and all three conditioning mechanisms."></a><figcaption><strong>Complementary signals, stronger extrapolation.</strong> H = history-state injection; I = initial-state injection; LG = Loop Gating; BG = Branch Gating. All state conditioning here is channel-wise, with history window w = 2.</figcaption></figure>
+        <div class="table-wrap"><table><caption>Pairwise conditioning at effective depth 84 · Qwen BaseLoop 4 × 7</caption><thead><tr><th scope="col">Conditioning</th><th scope="col">Overall accuracy (%) ↑</th></tr></thead><tbody><tr><th scope="row">Initial-state + Loop Gating <span>I + LG</span></th><td>36.33</td></tr><tr><th scope="row">Initial-state + history-state <span>I + H</span></th><td>36.91</td></tr><tr class="best"><th scope="row">History-state + Loop Gating <span>H + LG</span></th><td><strong>37.30</strong></td></tr></tbody></table></div><p class="table-note">Training effective depth: 28. Adding initial-state conditioning to H + LG provides no further benefit in this comparison.</p>
+      </div>
+    </section>
+
+    <section id="geometry">
+      <div class="container"><div class="reading-width"><p class="section-label">A closer look</p><h2>Useful loops build on earlier computation.</h2><p>Small updates do not necessarily mean useful convergence. We probe <strong>computational interaction</strong>: how much a downstream block’s update changes when an earlier block occurrence is skipped.</p><p>At depth 84, H + LG has 18.6% and 10.4% higher mean cross-loop interaction over lags 1–6 than I + H and I + LG, respectively. This pattern is consistent with its stronger accuracy and suggests that history and timestep signals help later loops build on earlier computation.</p></div>
+        <figure class="figure-card"><div class="figure-topline"><span class="small-label">Computational interaction across loops</span><a href="assets/figures/geometry.pdf" target="_blank" rel="noopener">Original PDF ↗</a></div><a class="figure-zoom" href="assets/figures/geometry.png" aria-label="Enlarge computational interaction analysis"><img src="assets/figures/geometry.png" width="2400" height="400" loading="lazy" alt="Skip-intervention analysis compares BaseLoop and CoreLoop responses, initial-state injection, pairwise conditioning, and three-way conditioning."></a><figcaption>Interaction measures dependence between computations, rather than just the size of representation changes. The cross-loop pattern provides a possible explanation for the complementarity of history-state and timestep conditioning.</figcaption></figure>
+      </div>
+    </section>
+
+    <section id="citation"><div class="narrow"><p class="section-label">Citation</p><h2>BibTeX</h2><p class="citation-note">arXiv preprint · <a href="https://arxiv.org/abs/2609.36636" target="_blank" rel="noopener">arXiv:2609.36636</a></p><div class="code-card"><div class="code-toolbar"><span>BIBTEX</span><button id="copy-citation" type="button">Copy citation</button></div><pre><code id="bibtex">@misc{zhuang2026looplm,
+  title  = {What Makes Recurrence Effective in Looped
+            Language Models?},
+  author = {Zhuang, Xinlin and Wang, Siyuan and
+            Razzak, Imran and Liu, Weiyang},
+  year   = {2026},
+  eprint = {2609.36636},
+  archivePrefix = {arXiv},
+  url    = {https://arxiv.org/abs/2609.36636}
+}</code></pre></div><p class="copy-status" id="copy-status" role="status" aria-live="polite"></p></div></section>
+  </main>
+  <footer><div class="container footer-inner"><a class="footer-brand" href="https://spherelab.ai/">SphereLab<span>↻</span></a><p>LoopLM · Understanding effective recurrence</p><a href="#top">Back to top ↑</a></div></footer>
+  <dialog id="figure-dialog" aria-labelledby="figure-dialog-title"><div class="dialog-toolbar"><p id="figure-dialog-title">Figure preview</p><button id="close-figure" type="button" aria-label="Close figure preview">Close <span aria-hidden="true">×</span></button></div><div class="dialog-image-wrap"><img id="expanded-figure" alt=""></div><p class="dialog-hint">Scroll to inspect the full-resolution figure. Press Esc to close.</p></dialog>
+</body>
+</html>

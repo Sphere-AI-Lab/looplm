@@ -1,0 +1,37 @@
+{
+  "recurrence": {
+    "source": "figs/motivation/llama_motivation_trends_final.pdf",
+    "width": 2400,
+    "height": 611
+  },
+  "architecture": {
+    "source": "figs/baseloop_coreloop/llama_baseloop_coreloop_compact.pdf",
+    "width": 2400,
+    "height": 917
+  },
+  "initial-state": {
+    "source": "figs/input_injection/qwen_all_shapes_compact.pdf",
+    "width": 2400,
+    "height": 742
+  },
+  "history-state": {
+    "source": "figs/input_injection/qwen_4x7_history_windows_compact.pdf",
+    "width": 2400,
+    "height": 742
+  },
+  "timestep": {
+    "source": "figs/timestep/qwen_family_compact.pdf",
+    "width": 2400,
+    "height": 786
+  },
+  "combined": {
+    "source": "figs/combine/combine_final_results.pdf",
+    "width": 2400,
+    "height": 566
+  },
+  "geometry": {
+    "source": "figs/geometry/four_questions_main.pdf",
+    "width": 2400,
+    "height": 400
+  }
+}
