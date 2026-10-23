@@ -1,0 +1,8 @@
+train_path: data/train
+validation_path: data/validation
+
+text_column: text
+id_column: id
+
+shuffle_seed: 42
+shuffle_buffer_size: 10000

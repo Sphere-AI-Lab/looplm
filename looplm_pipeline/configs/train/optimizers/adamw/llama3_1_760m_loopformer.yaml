@@ -1,0 +1,8 @@
+name: adamw
+# Explicit LR overrides the ref-based stable LR.
+lr: 1.0e-3
+ref_params: 0.76
+ref_tokens: 15.2
+betas: [0.9, 0.95]
+eps: 1.0e-8
+weight_decay: 0.1

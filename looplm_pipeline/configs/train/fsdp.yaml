@@ -1,0 +1,3 @@
+enabled: false
+mixed_precision: bf16
+grad_clip_norm: 1.0

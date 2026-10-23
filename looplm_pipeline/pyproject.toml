@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "looplm-pipeline"
+version = "0.1.0"
+description = "Minimal LoopLM pretraining pipeline for Llama BaseLoop and LoopFormer experiments."
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.10"
+dependencies = [
+  "torch>=2.2",
+  "transformers>=4.51",
+  "pyyaml>=6.0",
+  "numpy>=1.26",
+  "pyarrow>=14.0",
+]
+
+[project.scripts]
+looplm-train = "looplm_pipeline.cli.train:main"
+
+[tool.setuptools.packages.find]
+include = ["looplm_pipeline*"]

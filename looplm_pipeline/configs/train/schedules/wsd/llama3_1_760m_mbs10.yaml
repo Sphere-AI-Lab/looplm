@@ -1,0 +1,5 @@
+name: wsd
+total_steps: 5798
+warmup_steps: 290
+stable_steps: 4928
+decay_steps: 580

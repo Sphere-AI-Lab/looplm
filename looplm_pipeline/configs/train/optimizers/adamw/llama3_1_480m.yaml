@@ -1,0 +1,6 @@
+name: adamw
+ref_params: 0.48
+ref_tokens: 9.6
+betas: [0.9, 0.95]
+eps: 1.0e-8
+weight_decay: 0.1
