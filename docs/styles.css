@@ -200,7 +200,7 @@ h1 em {
   margin-top:29px;
 }
 
-.button,.resource-status {
+.button {
   display:inline-flex;
   align-items:center;
   gap:9px;
@@ -231,17 +231,6 @@ h1 em {
 .button.primary:hover {
   background:var(--accent);
   border-color:var(--accent);
-}
-
-.resource-status {
-  color:#68605c;
-  background:transparent;
-  border-style:dashed;
-}
-
-.coming-soon {
-  font-size:10px;
-  color:var(--muted);
 }
 
 .section-nav {
@@ -1058,12 +1047,9 @@ body.modal-open {
     gap:7px;
     margin-top:24px;
   }
-  .button,.resource-status {
+  .button {
     padding:9px 13px;
     font-size:12px;
-  }
-  .coming-soon {
-    font-size:9px;
   }
   .nav-inner {
     padding:0 20px;
